@@ -1,7 +1,7 @@
 Sugar.php
 =========
 
-Sugar is simple, Mocha(+Chai)-like testing framework for PHP.
+Sugar is simple, Mocha(+Chai)-like testing framework for PHP (>5.4).
 
 
 API
@@ -46,13 +46,36 @@ a(5)->should->be(5);
 a( array( $my_object, 'my_method') )->with()->should->ok();
 ```
 
+### before_each( $callback )
+Put this inside describe() and callback will be applied before each it().
+```php
+describe( '#create', function()
+{
+	before_each( function()
+	{
+		$this->db->truncate( 'table' ); // truncate table for each set of tests
+	});
+
+	it ('should add new entry', function()
+	{
+		// ...
+	});
+
+	it ('should add new entry with some option', function()
+	{
+		// ...
+	});
+});
+```
+
+### after_each( $callback )
+Similar to before_each(), but applies after each it().
 
 ### with([ $param, $param ... ])
 When a() is set to function or object, with() runs it with specified parameters.
 ```php
 a( 'htmlspecialchars' )->with('>')->should->be('&gt;');
 ```
-
 
 ### should()
 Linking word, does nothing.
