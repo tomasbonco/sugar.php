@@ -5,7 +5,7 @@
 # Licence: MIT
 # GitHub: https://github.com/tomasbonco/sugar_php
 
-# Ver: 0.1
+# Ver: 0.1.1
 # Date: 28.6.2014
 
 
@@ -121,7 +121,7 @@ class Unit_test
 		catch( Exception $e )
 		{
 			$this->throw = TRUE;
-			$this->value = $e->message;
+			$this->value = $e->getMessage();
 		}
 
 		$this->_output = ob_get_contents();
