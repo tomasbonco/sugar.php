@@ -1,11 +1,49 @@
-Sugar.php
-=========
+# Sugar.php
 
 Sugar is simple, Mocha(+Chai)-like testing framework for PHP (>5.4).
 
+## Contents
 
-API
-===
+* [Contents](#contents)
+* [API](#api)
+  * [describe( $desc, $callback )](#describe-desc-callback)
+  * [it( $desc, $callback )](#it-desc-callback)
+  * [a( $value )](#a-value)
+  * [before_each( $callback )](#before-each-callback)
+  * [after_each( $callback )](#after-each-callback)
+  * [with([ $param, $param ... ])](#with-param-param)
+  * [should()](#should)
+  * [be( [$expected] )](#be-expected)
+  * [not( [$expected] )](#not-expected)
+  * [to( [$expected] )](#to-expected)
+  * [equal( [$expected] )](#equal-expected)
+  * [equals( [$expected] )](#equals-expected)
+  * [not_equal( [$expeted] )](#not-equal-expeted)
+  * [not_equals()](#not-equals)
+  * [exactly( [$expected] )](#exactly-expected)
+  * [greater( [$expected] )](#greater-expected)
+  * [lower( [$expected] )](#lower-expected)
+  * [or_equal( [$expected] )](#or-equal-expected)
+  * [or_equals( [$expected] )](#or-equals-expected)
+  * [gt( [$expected] )](#gt-expected)
+  * [lt( [$expected] )](#lt-expected)
+  * [gte( [$expected] )](#gte-expected)
+  * [lte( [$expected] )](#lte)
+  * [output( [$expected] )](#output-expected)
+  * [outputs( [$expected] )](#outputs-expected)
+  * [display( [$expected] )](#display-expected)
+  * [blank()](#blank)
+  * [not_blank()](#not-blank)
+  * [true()](#true)
+  * [ok()](#ok)
+  * [false()](#false)
+  * [then( [$expected] )](#then-expected)
+  * [thrown()](#thrown)
+  * [fail()](#fail)
+  * [also()](#also)
+* [Linking words](#linking-words)
+
+## API
 
 ### describe( $desc, $callback )
 Name group of tests.
@@ -163,7 +201,7 @@ Alias (abbreviation) to lower()
 ### gte( [$expected] )
 Alias (abbreviation) for calling greater()->or_equals_to()
 
-### lte()
+### lte( [$expected] )
 Alias (abbreviation) for calling lower()->or_equals_to()
 
 ### output( [$expected] )
