@@ -71,6 +71,8 @@ describe( '#create', function()
 ### after_each( $callback )
 Similar to before_each(), but applies after each it().
 
+---
+
 ### with([ $param, $param ... ])
 When a() is set to function or object, with() runs it with specified parameters.
 ```php
