@@ -201,13 +201,13 @@ describe( '#create', function()
 #### after_each( $callback )
 Similar to before_each(), but it will be applied after each it().
 
----
-
 #### with([ $param, $param ... ])
 When a() is set to function or object, with() runs it with specified parameters.
 ```php
 a( 'htmlspecialchars' )->with('>')->should->be('&gt;');
 ```
+
+---
 
 ### Comparators
 
@@ -258,6 +258,8 @@ It is similar to equal, but it compares using ===.
 a(TRUE)->should->not()->be->exactly( 1 );
 ```
 
+---
+
 ### Number
 
 #### greater( [$expected] )
@@ -302,6 +304,8 @@ Evaluates the test. Useful after greater() and lower().
 a( 5 )->should->be->lower()->than( 7 );
 ```
 
+---
+
 ### Bool
 
 #### true()
@@ -321,6 +325,8 @@ Evaluates the test and checks if its output is equal ( === ) to FALSE.
 ```php
 a( 5 )->should->be->ok();
 ```
+
+---
 
 ### String
 
@@ -343,6 +349,8 @@ Checks if value is in the array of expected values. **Note: $expected must be an
 a('Sugar')->should->be->in( array( 'Sugar', 'is', 'awesome' ) );
 a('Sugar')->should->not()->be->in( array( 'PHP', 'is', 'awesome' ) );
 ```
+
+---
 
 ### Array
 
@@ -371,6 +379,8 @@ Checks if given array has expected length.
 a( ['sugar', 'is', 'awesome'] )->should->length( 3 );
 ```
 
+---
+
 ### Output
 
 #### output( [$expected] )
@@ -394,6 +404,8 @@ Alias to output()
 #### display( [$expected] )
 Alias to output()
 
+---
+
 ### Exceptions and empty values
 
 #### blank()
@@ -413,6 +425,8 @@ a( array( $windows, 'throw_some_random_error') )->should->have->thrown();
 
 #### fail()
 Alias to thrown().
+
+---
 
 ### Special
 
