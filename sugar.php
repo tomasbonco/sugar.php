@@ -6,7 +6,7 @@
 # GitHub: https://github.com/tomasbonco/sugar_php
 
 # Ver: 0.2
-# Date: 28.6.2014
+# Date: 8.7.2014
 
 
 function describe( $desc, $callback )
