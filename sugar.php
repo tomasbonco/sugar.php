@@ -48,14 +48,19 @@ function it( $desc, $callback )
 		$stack_string = '';
 		array_walk( $stack, function( $item ) use( &$stack_string )
 		{
-			if ( $item['file'] != __FILE__ )
-			$stack_string .= sprintf( "%s at %s:%s\n<br>", $item['function'], $item['file'], $item['line'] );
+			if ( ! empty( $item['file'] ) && ! empty( $item['function'] ) && ! empty( $item['line'] ) )
+			{
+				if ( $item['file'] != __FILE__ )
+				{
+					$stack_string .= sprintf( "%s at %s:%s\n<br>", $item['function'], $item['file'], $item['line'] );
+				}
+			}
 		});
 
-		$error = sprintf( "<p class='error'> <div class='error message'><strong>%s</strong></div> <div class='trace'>%s</div> </p>\n", $e->getMessage(), $stack_string);
+		$error = sprintf( "<div class='error'> <div class='error-message'><strong>%s</strong></div> <div class='trace'>%s</div> </div>\n", $e->getMessage(), $stack_string);
 	}
 
-	printf( "<div class='it'><span class='test_name'>%s</span> ................... <span class='test_result %s'>%s</span> \n<br> %s </div>", $desc, strtolower( $status ), $status, $error );
+	printf( "<div class='it'><span class='test-name'>%s</span> ................... <span class='test-result %s'>%s</span> \n<br> %s </div>", $desc, strtolower( $status ), $status, $error );
 
 	$after_each();
 }
@@ -416,6 +421,164 @@ class Unit_test
 			throw new Exception( sprintf( 'Failed: Expected [%s] not to be [%s].', $this->value, $expected ) );
 		}
 	}
+
+
+	/* Data types */
+
+	function array( $expected )
+	{
+		if ( ( ( ! $this->negation && is_array( $this->value )) || ( $this->negation && ! is_array( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] to be array.', $this->value, $expected ) );
+		}
+	}
+
+
+	function bool( $expected )
+	{
+		if ( ( ( ! $this->negation && is_bool( $this->value )) || ( $this->negation && ! is_bool( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] to be bool.', $this->value, $expected ) );
+		}
+	}
+
+
+	function callable( $expected )
+	{
+		if ( ( ( ! $this->negation && is_callable( $this->value )) || ( $this->negation && ! is_callable( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] to be callable.', $this->value, $expected ) );
+		}
+	}
+
+
+	function double( $expected )
+	{
+		if ( ( ( ! $this->negation && is_double( $this->value )) || ( $this->negation && ! is_double( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] to be double.', $this->value, $expected ) );
+		}
+	}
+
+
+	function float( $expected )
+	{
+		if ( ( ( ! $this->negation && is_float( $this->value )) || ( $this->negation && ! is_float( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] to be float.', $this->value, $expected ) );
+		}
+	}
+
+
+	function int( $expected )
+	{
+		if ( ( ( ! $this->negation && is_int( $this->value )) || ( $this->negation && ! is_int( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] to be int.', $this->value, $expected ) );
+		}
+	}
+
+
+	function object( $expected )
+	{
+		if ( ( ( ! $this->negation && is_object( $this->value )) || ( $this->negation && ! is_object( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] to be object.', $this->value, $expected ) );
+		}
+	}
+
+
+	function resource( $expected )
+	{
+		if ( ( ( ! $this->negation && is_resource( $this->value )) || ( $this->negation && ! is_resource( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] to be resource.', $this->value, $expected ) );
+		}
+	}
+
+
+	function scalar( $expected )
+	{
+		if ( ( ( ! $this->negation && is_scalar( $this->value )) || ( $this->negation && ! is_scalar( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] to be scalar.', $this->value, $expected ) );
+		}
+	}
+
+
+	function number( $expected )
+	{
+		if ( ( ( ! $this->negation && is_numeric( $this->value )) || ( $this->negation && ! is_numeric( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] not to be number.', $this->value, $expected ) );
+		}
+	}
+
+
+	function string( $expected )
+	{
+		if ( ( ( ! $this->negation && is_string( $this->value )) || ( $this->negation && ! is_string( $this->value ) )))
+		{
+			return $this;
+		}
+
+		else
+		{
+			throw new Exception( sprintf( 'Failed: Expected [%s] not to be string.', $this->value, $expected ) );
+		}
+	}
+
+
 
 
 	/* Special */
