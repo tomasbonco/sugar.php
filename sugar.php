@@ -13,7 +13,7 @@ function describe( $desc, $callback )
 {
 	global $__sugar;
 
-	if ( empty( $desc ) || ! is_string( $desc ) || strlen( trim( $desc )) == 0 ) throw new Exception( 'First parameter of it() is required and must be string.' );
+	if ( empty( $desc ) || ! is_string( $desc ) || strlen( trim( $desc )) == 0 ) throw new Exception( 'First parameter of it() is required and must be a string.' );
 	if ( empty( $callback ) || ! is_callable( $callback) ) throw new Exception( 'Second parameter of it() is required and must be callable.' );
 
 	if ( empty( $__sugar ) )
@@ -34,7 +34,7 @@ function it( $desc, $callback )
 {
 	global $__sugar;
 
-	if ( empty( $desc ) || ! is_string( $desc ) || strlen( trim( $desc )) == 0 ) throw new Exception( 'First parameter of it() is required and must be string.' );
+	if ( empty( $desc ) || ! is_string( $desc ) || strlen( trim( $desc )) == 0 ) throw new Exception( 'First parameter of it() is required and must be a string.' );
 	if ( empty( $callback ) || ! is_callable( $callback) ) throw new Exception( 'Second parameter of it() is required and must be callable.' );
 
 	if ( empty( $__sugar->tests )) throw new Exception( 'It() must be called inside describe().');
@@ -55,9 +55,12 @@ function it( $desc, $callback )
 	catch ( Exception $e)
 	{
 		$report->status = 'FAIL';
+		$report->message = $e->getMessage();
 		$report->stack = array();
+
+		$stack = $e->getTrace();
 		
-		array_walk( $e->getTrace(), function( $item )
+		array_walk( $stack, function( $item ) use( & $report )
 		{
 			if ( ! empty( $item['file'] ) && ! empty( $item['function'] ) && ! empty( $item['line'] ) )
 			{
@@ -76,7 +79,8 @@ function it( $desc, $callback )
 
 function a( $value )
 {
-	return new Sugar_unit_test( $value );
+	global $__sugar;
+	return new $__sugar->class( $value );
 }
 
 function before_each( $callback )
@@ -91,21 +95,21 @@ function after_each( $callback )
 	$__sugar->after_each = $callback;
 }
 
-function sugar( $filter = NULL, $output = TRUE, $reporter = 'sugar_report' )
+function sugar( $filter = NULL, $reporter = 'sugar_default_reporter', $unit_class = 'Sugar_unit_test' )
 {
 	global  $__sugar;
 
 	if ( ! empty( $filter ) && ! is_array( $filter )) throw new Exception( 'First parameter ($filter) of Sugar must be an array (or null)!' );
 	if ( ! empty( $output ) && ! is_bool( $output )) throw new Exception( 'Second parameter ($output) of Sugar must be bool!' );
 
-
-
-
 	if ( empty( $__sugar ) )
 	{
 		return FALSE;
 	}
 
+	if ( empty( $reporter ) ) $reporter = 'sugar_default_reporter';
+
+	$__sugar->class = $unit_class;
 
 	$tests = $__sugar->tests;
 
@@ -117,7 +121,7 @@ function sugar( $filter = NULL, $output = TRUE, $reporter = 'sugar_report' )
 
 	foreach ( $tests as $test => $callback )
 	{
-		$__sugar->before_each = function(){ echo 'aa'; };
+		$__sugar->before_each = function(){};
 		$__sugar->after_each = function(){};
 
 		$__sugar->results[ $test ] = array();
@@ -132,24 +136,23 @@ function sugar( $filter = NULL, $output = TRUE, $reporter = 'sugar_report' )
 	if ( ! empty( $reporter ))
 	{
 		if ( ! is_callable( $reporter ) ) throw new Exception( sprintf( 'Reporter must callable, "%s" is not.', $reporter ));
-		$reporter();
+		$reporter( $__sugar->results );
 	}
 
 	return $__sugar->results;
 }
 
 
-function sugar_report()
+function sugar_default_reporter( $reports )
 {
-	global $__sugar;
-
-	foreach ( $__sugar->results as $desc => $results )
+	foreach ( $reports as $desc => $results )
 	{
 		printf( '<div class="describe"> <h2> %s </h2> <div class="its">', $desc );
 
 		foreach ( $results as $it => $report )
 		{
-			printf( "<div class='it'><span class='test-name'>%s</span> ................... <span class='test-result %s'>%s</span> \n<br> %s </div>", $it, strtolower( $report->status ), $report->status, empty( $report->stack ) ? '' : $report->stack );
+			printf( "<div class='it'><span class='test-name'>%s</span> ................... <span class='test-result %s'>%s</span> \n<br> <div class='error'><div class='error-message'> <strong>%s</strong> </div><div class='error-trace'> %s </div></div>",
+				$it, strtolower( $report->status ), $report->status, ! empty( $report->message ) ? $report->message : '', empty( $report->stack ) ? '' : join( "<br>\n", $report->stack ));
 		}
 
 		printf( '</div> </div>');
@@ -219,6 +222,12 @@ class Sugar_unit_test
 	{
 		return $this;
 	}
+
+	function have()
+	{
+		return $this;
+	}
+
 
 
 	/* Comparators */
@@ -310,6 +319,20 @@ class Sugar_unit_test
 	}
 
 
+	function exactly( $expected )
+	{
+		if ( $this->mode == 'equal' && $this->_can_continue( $this->value === $expected ))
+		{
+			return $this;
+		}
+
+		else
+		{
+			$this->_throw( $this->value, 'to be exactly', $expected );
+		}
+	}
+
+
 	/* Numbers */
 
 	function greater( $expected = NULL )
@@ -353,7 +376,7 @@ class Sugar_unit_test
 
 		if ( $expected )
 		{
-			return $this->then( $expected );	
+			return $this->than( $expected );	
 		}
 
 		else
@@ -395,19 +418,13 @@ class Sugar_unit_test
 	}
 
 
-	function then( $expected )
+	function than( $expected )
 	{
 		return $this->_mode( $expected );
 	}
 
 
 	/* Bool */
-
-	function fail()
-	{
-		$this->thrown();
-	}
-
 
 	function true()
 	{
@@ -429,11 +446,15 @@ class Sugar_unit_test
 
 	/* String */
 
-	function contain( $search, $offset, $length )
+	function contain( $search, $offset = 0, $length = 0 )
 	{
+		if ( ! is_array( $this->value ) && ! is_string( $this->value )) $this->_throw( gettype( $this->value ), 'to be', 'array or string' );
+
 		if ( is_string( $this->value ) )
 		{
-			$result = ( substr_count( $this->value, $search, $offset, $limit ) > 0 );
+			if ( empty( $length )) $length = strlen( $search ) - $offset;
+
+			$result = ( substr_count( $this->value, $search, $offset, $length ) > 0 );
 		}
 
 		else
@@ -462,9 +483,17 @@ class Sugar_unit_test
 		
 	}
 
+	function contains( $search, $offset = 0, $length = 0 )
+	{
+		return $this->contain( $search, $offset, $length );
+	}
+
+
 	function length( $expected )
 	{
-		if (  _can_continue( ( is_string( $this->value ) && strlen( $this->value ) == $expected ) || ( is_array( $this->value ) && count( $this->value ) == $expected ) ))
+		if ( ! is_array( $this->value ) && ! is_string( $this->value )) $this->_throw( gettype( $this->value ), 'to be', 'array or string' );
+
+		if (  $this->_can_continue( ( is_string( $this->value ) && strlen( $this->value ) == $expected ) || ( is_array( $this->value ) && count( $this->value ) == $expected ) ))
 		{
 			return $this;
 		}
@@ -476,10 +505,29 @@ class Sugar_unit_test
 	}
 
 
+	function in( $expected )
+	{
+		if ( ! is_array( $expected)) throw new Exception( 'Incorrectly written test: in() accepts an array as a parameter' );
+
+		if (  $this->_can_continue( in_array( $this->value, $expected ) ))
+		{
+			return $this;
+		}
+
+		else
+		{
+			$this->_throw( $this->value, 'to be one of ', $expected );
+		}
+	}
+
+
 	/* Array */
 
 	function keys( $expected )
 	{
+		if ( ! is_array( $this->value )) $this->_throw( gettype( $this->value ), 'to be', 'array' );
+		if ( ! is_array( $expected)) throw new Exception( 'Incorrectly written test: keys() accepts an array as a parameter' );
+
 		$flag = TRUE;
 
 		foreach( $expected as $key )
@@ -491,7 +539,7 @@ class Sugar_unit_test
 			}
 		}
 
-		if ( _can_continue( $flag ) )
+		if ( $this->_can_continue( $flag ) )
 		{
 			return $this;
 		}
@@ -505,6 +553,9 @@ class Sugar_unit_test
 
 	function only( $expected )
 	{
+		if ( ! is_array( $this->value )) $this->_throw( gettype( $this->value ), 'to be', 'array' );
+		if ( ! is_array( $expected )) throw new Exception( 'Incorrectly written test: only() accepts an array as a parameter' );
+
 		$flag = TRUE;
 
 		if ( count( $this->value ) != count( $expected ) )
@@ -524,7 +575,7 @@ class Sugar_unit_test
 			}
 		}
 
-		if ( _can_continue( $flag ) )
+		if ( $this->_can_continue( $flag ) )
 		{
 			return $this;
 		}
@@ -601,8 +652,13 @@ class Sugar_unit_test
 
 		else
 		{
-			$this->_throw( $this->value, 'to thrown', 'Exception' );
+			$this->_throw( $this->value, 'to throw', 'Exception' );
 		}
+	}
+
+	function fail()
+	{
+		$this->thrown();
 	}
 
 
@@ -775,20 +831,6 @@ class Sugar_unit_test
 
 	/* Comparing */
 
-	function exactly( $expected )
-	{
-		if ( $this->mode == 'equal' && $this->_can_continue( $this->value === $expected ))
-		{
-			return $this;
-		}
-
-		else
-		{
-			$this->_throw( $this->value, 'to be exactly', $expected );
-		}
-	}
-
-
 	function _mode( $expected )
 	{
 		if ( ( $this->mode == 'equal' && ( ( ! $this->negation && $this->value == $expected ) || ( $this->negation && ! ( $this->value == $expected )) ))
@@ -802,18 +844,18 @@ class Sugar_unit_test
 
 		else
 		{
-			$this->_throw( $this->value, 'to be equal', $expected );
+			$this->_throw( $this->value, 'to be equal to', $expected );
 		}
 	}
 
 	function _throw( $expected, $sentence, $given )
 	{
 		throw new Exception( sprintf(
-			'Failed: Excepted [%s] %s%s [%s].',
+			'Failed: Expected [%s] %s%s [%s].',
 			is_array( $expected ) ? ('[' . join( ', ', array_keys( $expected )) . ']') : $expected,
 			$this->negation ? 'not ' : '' ,
 			$sentence,
-			is_array( $given ) ? ('[' . join( ', ', array_keys( $given )) . ']') : $expected ));
+			is_array( $given ) ? ('[' . join( ', ', array_values( $given )) . ']') : $given ));
 	}
 
 	function _can_continue( $value )
