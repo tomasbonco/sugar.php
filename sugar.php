@@ -5,16 +5,22 @@
 # Licence: MIT
 # GitHub: https://github.com/tomasbonco/sugar_php
 
-# Ver: 0.2
-# Date: 8.7.2014
+# Ver: 0.3
+# Date: 9.7.2014
 
 
 function describe( $desc, $callback )
 {
 	global $__sugar;
 
+
+	# Validation
+
 	if ( empty( $desc ) || ! is_string( $desc ) || strlen( trim( $desc )) == 0 ) throw new Exception( 'First parameter of it() is required and must be a string.' );
 	if ( empty( $callback ) || ! is_callable( $callback) ) throw new Exception( 'Second parameter of it() is required and must be callable.' );
+
+
+	# Create sugar, if it's not yet
 
 	if ( empty( $__sugar ) )
 	{
@@ -26,23 +32,36 @@ function describe( $desc, $callback )
 		$__sugar->tests = array();
 	}
 
+
+	# Save the test to global variable $__sugar, so sugar() can run it
+
 	$__sugar->tests[ $desc ] = $callback;
 
 }
 
+
 function it( $desc, $callback )
 {
 	global $__sugar;
+
+
+	# Validation
 
 	if ( empty( $desc ) || ! is_string( $desc ) || strlen( trim( $desc )) == 0 ) throw new Exception( 'First parameter of it() is required and must be a string.' );
 	if ( empty( $callback ) || ! is_callable( $callback) ) throw new Exception( 'Second parameter of it() is required and must be callable.' );
 
 	if ( empty( $__sugar->tests )) throw new Exception( 'It() must be called inside describe().');
 
-	$before_each = $__sugar->before_each; 	# Funny fact: PHP can't do $__sugar->before_each(), because before_each wasn't defined as a method
+
+	# Apply before_each
+
+	$before_each = $__sugar->before_each;
 	$after_each = $__sugar->after_each;
 
 	$before_each();
+
+
+	# Run the test, save the result to $reporter
 
 	$report = new stdClass;
 
@@ -72,10 +91,17 @@ function it( $desc, $callback )
 		});
 	}
 
+
+	# Save the result
+
 	$__sugar->current_block[ $desc ] = $report;
+
+
+	# Apply after_each
 
 	$after_each();
 }
+
 
 function a( $value )
 {
@@ -83,11 +109,13 @@ function a( $value )
 	return new $__sugar->class( $value );
 }
 
+
 function before_each( $callback )
 {
 	global $__sugar;
 	$__sugar->before_each = $callback;
 }
+
 
 function after_each( $callback )
 {
@@ -95,23 +123,26 @@ function after_each( $callback )
 	$__sugar->after_each = $callback;
 }
 
+
 function sugar( $filter = NULL, $reporter = 'sugar_default_reporter', $unit_class = 'Sugar_unit_test' )
 {
 	global  $__sugar;
 
+
+	# Validation
+
 	if ( ! empty( $filter ) && ! is_array( $filter )) throw new Exception( 'First parameter ($filter) of Sugar must be an array (or null)!' );
 	if ( ! empty( $output ) && ! is_bool( $output )) throw new Exception( 'Second parameter ($output) of Sugar must be bool!' );
 
-	if ( empty( $__sugar ) )
-	{
-		return FALSE;
-	}
-
+	if ( empty( $__sugar ) ) return FALSE;
 	if ( empty( $reporter ) ) $reporter = 'sugar_default_reporter';
 
 	$__sugar->class = $unit_class;
 
 	$tests = $__sugar->tests;
+
+
+	# Filter the tests when $filter parameter exists
 
 	if ( ! empty( $filter ) )
 	{
@@ -119,8 +150,14 @@ function sugar( $filter = NULL, $reporter = 'sugar_default_reporter', $unit_clas
 		$tests = array_filter( $tests );
 	}
 
+
+	# Run the tests - this will run all the it()s
+
 	foreach ( $tests as $test => $callback )
 	{
+
+		# Reset before_each and after_each
+
 		$__sugar->before_each = function(){};
 		$__sugar->after_each = function(){};
 
@@ -129,14 +166,24 @@ function sugar( $filter = NULL, $reporter = 'sugar_default_reporter', $unit_clas
 
 		$callback();
 
+		# Reset before_each and after_each
+
 		$__sugar->before_each = function(){};
 		$__sugar->after_each = function(){};
 	}
 
-	if ( ! empty( $reporter ))
+
+	# Calling reporter
+
+	if ( ! empty( $reporter ) && ( is_string( $reporter ) || is_array( $reporter )))
 	{
-		if ( ! is_callable( $reporter ) ) throw new Exception( sprintf( 'Reporter must callable, "%s" is not.', $reporter ));
-		$reporter( $__sugar->results );
+		if ( is_string( $reporter ) ) $reporter = array( $reporter );
+
+		foreach( $reporter as $r )
+		{
+			if ( ! is_callable( $r ) ) throw new Exception( sprintf( 'Reporter must callable, "%s" is not.', $r ));
+			$r( $__sugar->results );
+		}
 	}
 
 	return $__sugar->results;
@@ -165,6 +212,7 @@ class Sugar_unit_test
 	var $mode = 'equal'; 	// equal, gt, gte, lt, lte
 	var $negation = FALSE;
 	var $throw = FALSE;
+	var $start_time = NULL;
 
 
 	var $should;
@@ -172,12 +220,13 @@ class Sugar_unit_test
 	var $to;
 	var $equal;
 	var $equals;
+	var $have;
 
 
 	function Sugar_unit_test( $value )
 	{
 		$this->value = $value;
-		$this->start = microtime( TRUE );
+		$this->start_time = microtime( TRUE );
 
 		$this->should =
 		$this->be =
@@ -516,7 +565,21 @@ class Sugar_unit_test
 
 		else
 		{
-			$this->_throw( $this->value, 'to be one of ', $expected );
+			$this->_throw( $this->value, 'to be one of', $expected );
+		}
+	}
+
+
+	function match( $expected )
+	{
+		if ( $this->_can_continue( preg_match( $expected, $this->value ) ) )
+		{
+			return $this;
+		}
+
+		else
+		{
+			$this->_throw( $this->value, 'to match', $expected );
 		}
 	}
 
@@ -583,6 +646,98 @@ class Sugar_unit_test
 		else
 		{
 			$this->_throw( $this->value, 'to have only keys', $expected );
+		}
+	}
+
+
+	/* Object */
+
+	function properties( $expected )
+	{
+		if ( ! is_object( $this->value )) $this->_throw( gettype( $this->value ), 'to be', 'object' );
+		if ( ! is_array( $expected )) throw new Exception( 'Incorrectly written test: only() accepts an array as a parameter' );
+
+		$flag = TRUE;
+
+		foreach( $expected as $key )
+		{
+			if ( property_exists( $this->value, $key ) == FALSE )
+			{
+				$flag = FALSE;
+				break;
+			}
+		}
+
+		if ( $this->_can_continue( $flag ) )
+		{
+			return $this;
+		}
+
+		else
+		{
+			$this->_throw( $this->value, '(' . join( ', ', array_keys( get_object_vars( $this->value ))) . ') to have properties', $expected );
+		}
+	}
+
+
+	function methods( $expected )
+	{
+		if ( ! is_object( $this->value )) $this->_throw( gettype( $this->value ), 'to be', 'object' );
+		if ( ! is_array( $expected )) throw new Exception( 'Incorrectly written test: only() accepts an array as a parameter' );
+
+		$flag = TRUE;
+
+		foreach( $expected as $key )
+		{
+			if ( method_exists( $this->value, $key ) == FALSE )
+			{
+				$flag = FALSE;
+				break;
+			}
+		}
+
+		if ( $this->_can_continue( $flag ) )
+		{
+			return $this;
+		}
+
+		else
+		{
+			$this->_throw( $this->value, '(may be inaccurate: ' . join( ', ', get_class_methods( get_class( $this->value ))) . ') to have methods', $expected );
+		}
+	}
+
+
+	function subclass_of( $expected )
+	{
+		if ( ! is_object( $this->value )) $this->_throw( gettype( $this->value ), 'to be', 'object' );
+
+		if ( $this->_can_continue( is_subclass_of( $this->value, $expected ) ))
+		{
+			return $this;
+		}
+
+		else
+		{
+			$this->_throw( $this->value, 'to be subclass of', $expected );
+		}
+	}
+
+
+	/* Time */
+
+	function exceed( $expected )
+	{
+		$time = round( microtime( TRUE ) - $this->start_time );
+
+		if ( $this->_can_continue( $expected < $time ) )
+		{
+			return $this;
+		}
+
+		else
+		{
+			$this->_throw( $time . 'ms', 'to exceed', $expected .'ms' );
 		}
 	}
 
@@ -655,6 +810,7 @@ class Sugar_unit_test
 			$this->_throw( $this->value, 'to throw', 'Exception' );
 		}
 	}
+
 
 	function fail()
 	{
@@ -836,8 +992,8 @@ class Sugar_unit_test
 		if ( ( $this->mode == 'equal' && ( ( ! $this->negation && $this->value == $expected ) || ( $this->negation && ! ( $this->value == $expected )) ))
 		  || ( $this->mode == 'gt' 	&& ( ( ! $this->negation && $this->value > $expected ) 	|| ( $this->negation && ! ( $this->value > $expected )) ))
 		  || ( $this->mode == 'lt' 	&& ( ( ! $this->negation && $this->value < $expected ) 	|| ( $this->negation && ! ( $this->value < $expected )) ))
-		  || ( $this->mode == 'gte' 	&& ( ( ! $this->negation && $this->value >= $expected ) || ( $this->negation && ! ( $this->value >= $expected )) ))
-		  || ( $this->mode == 'lte' 	&& ( ( ! $this->negation && $this->value <= $expected ) || ( $this->negation && ! ( $this->value <= $expected )) )) )
+		  || ( $this->mode == 'gte' && ( ( ! $this->negation && $this->value >= $expected ) || ( $this->negation && ! ( $this->value >= $expected )) ))
+		  || ( $this->mode == 'lte' && ( ( ! $this->negation && $this->value <= $expected ) || ( $this->negation && ! ( $this->value <= $expected )) )) )
 		{
 			return $this;
 		}
@@ -848,15 +1004,36 @@ class Sugar_unit_test
 		}
 	}
 
+
 	function _throw( $expected, $sentence, $given )
 	{
-		throw new Exception( sprintf(
-			'Failed: Expected [%s] %s%s [%s].',
-			is_array( $expected ) ? ('[' . join( ', ', array_keys( $expected )) . ']') : $expected,
-			$this->negation ? 'not ' : '' ,
-			$sentence,
-			is_array( $given ) ? ('[' . join( ', ', array_values( $given )) . ']') : $given ));
+		throw new Exception( sprintf( 'Failed: Expected [%s] %s%s [%s].', $this->_stringify( $expected, TRUE ), $this->negation ? 'not ' : '' , $sentence, $this->_stringify( $given ) ));
 	}
+
+
+	function _stringify( $value, $keys = FALSE )
+	{
+		switch ( gettype( $value ) )
+		{
+			case 'array':
+
+				$value = sprintf( '[%s]', join( ', ', $keys ? array_keys( $value ) : array_values( $value ) ));
+				break;
+
+			case 'object':
+
+				$value = 'Object of ' . get_class( $value );
+				break;
+
+			case 'resource':
+
+				$value = 'Resource';
+				break;
+		}
+
+		return $value;
+	}
+
 
 	function _can_continue( $value )
 	{

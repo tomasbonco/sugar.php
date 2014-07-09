@@ -41,11 +41,18 @@ Sugar is simple, Mocha(+Chai)-like testing framework for PHP (>5.4).
             - [contain( $substring, [$offset, $length] )](#contain-substring-offset-length-)
             - [length( $expected )](#length-expected-)
             - [in( $expected )](#in-expected-)
+            - [match( $expected )](#match-expected-)
         - [Array](#array)
             - [keys( $expected )](#keys-expected-)
             - [only( $expected )](#only-expected-)
             - [contain( $expected )](#contain-expected-)
             - [length( $expected )](#length-expected-)
+        - [Object](#object)
+            - [properties( $expected )](#properties-expected-)
+            - [methods( $expected )](#methods-expected-)
+            - [subclass_of( $expected )](#subclassof-expected-)
+        - [Time](#time)
+            - [exceed( $expected )](#exceed-expected-)
         - [Output](#output)
             - [output( [$expected] )](#output-expected-)
             - [outputs( [$expected] )](#outputs-expected-)
@@ -67,7 +74,7 @@ Sugar is simple, Mocha(+Chai)-like testing framework for PHP (>5.4).
 ### Core
 
 #### sugar( [$filter, $reporter, $unit_class] )
-Sugar() starts the execution of tests. You can specify which tests you would like to run in the first parameter, or leave it blank to run all the tests. Specify reporter in the second parameter or set it to `FALSE`, if you don't want to show HTML output. Sugar's default reporter is called `sugar_default_reporter`. If you want to extend Sugar, you can extend Sugar's default class (`Sugar_unit_test`) that handles unit tests and passes the name of your newly created class as the third parameter.
+Sugar() starts the execution of tests. You can specify which tests you would like to run in the first parameter, or leave it blank to run all the tests. Specify reporter in the second parameter or set it to `FALSE`, if you don't want to show HTML output. Sugar's default reporter is called `sugar_default_reporter`. You can set multiple reporters by passing an array. If you want to extend Sugar, you can extend Sugar's default class (`Sugar_unit_test`) that handles unit tests and passes the name of your newly created class as the third parameter.
 ```php
 describe( '#create', function()
 {
@@ -350,6 +357,13 @@ a('Sugar')->should->be->in( array( 'Sugar', 'is', 'awesome' ) );
 a('Sugar')->should->not()->be->in( array( 'PHP', 'is', 'awesome' ) );
 ```
 
+#### match( $expected )
+Checks if value matches expected regex.
+```php
+a('Sugar is sweet.')->should->match( '/sweet/' );
+```
+
+
 ---
 
 ### Array
@@ -377,6 +391,47 @@ a( ['sugar', 'is', 'awesome'] )->should->contain( ['Sugar'] );
 Checks if given array has expected length.
 ```php
 a( ['sugar', 'is', 'awesome'] )->should->length( 3 );
+```
+
+---
+
+### Object
+
+#### properties( $expected )
+Checks if given object has expected properties.
+```php
+$user = new StdClass;
+$user->name = 'Alex';
+$user->email = 'example@email.com';
+
+a( $user )->should->have->properties( [ 'name', 'email' ] );
+```
+
+#### methods( $expected )
+Checks if given object has expected methods.
+```php
+a( $user )->should->not()->have->methods( [ 'remove' ] );
+```
+
+#### subclass_of( $expected )
+Checks if given object is subclass of given class.
+```php
+Class x{}
+Class y extends x {}
+
+$z = new y();
+
+a( $z )->should->be->subclass_of( 'x' );
+```
+
+---
+
+### Time
+
+#### exceed( $expected )
+Checks if given test haven't exceeded expected time in milliseconds.
+```php
+a( 'parse_xml' )->with( 'file.xml' )->should->not()->exceed( 50 );
 ```
 
 ---
