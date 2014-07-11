@@ -5,7 +5,7 @@
 # Licence: MIT
 # GitHub: https://github.com/tomasbonco/sugar_php
 
-# Ver: 0.3
+# Ver: 0.3.1
 # Date: 9.7.2014
 
 
@@ -192,18 +192,22 @@ function sugar( $filter = NULL, $reporter = 'sugar_default_reporter', $unit_clas
 
 function sugar_default_reporter( $reports )
 {
+	printf( '<div class="sugar">' );
+
 	foreach ( $reports as $desc => $results )
 	{
 		printf( '<div class="describe"> <h2> %s </h2> <div class="its">', $desc );
 
 		foreach ( $results as $it => $report )
 		{
-			printf( "<div class='it'><span class='test-name'>%s</span> ................... <span class='test-result %s'>%s</span> \n<br> <div class='error'><div class='error-message'> <strong>%s</strong> </div><div class='error-trace'> %s </div></div>",
-				$it, strtolower( $report->status ), $report->status, ! empty( $report->message ) ? $report->message : '', empty( $report->stack ) ? '' : join( "<br>\n", $report->stack ));
+			printf( "<div class='it %s'> <span class='test-name'>%s</span> ................... <span class='test-result'>%s</span> \n<br> <div class='error'><div class='error-message'> <strong>%s</strong> </div> <div class='error-trace'> %s </div></div></div>",
+				strtolower( $report->status ), $it, $report->status, ! empty( $report->message ) ? $report->message : '', empty( $report->stack ) ? '' : join( "<br>\n", $report->stack ));
 		}
 
-		printf( '</div> </div>');
+		printf( '</div></div>' );
 	}
+
+	printf( '</div>' );
 }
 
 class Sugar_unit_test
