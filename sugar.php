@@ -437,7 +437,7 @@ class Sugar_unit_test
 
 	function or_equal( $expected = NULL )
 	{
-		$this->or_equals( $expected );
+		return $this->or_equals( $expected );
 	}
 
 
@@ -477,19 +477,19 @@ class Sugar_unit_test
 
 	function true()
 	{
-		$this->exactly( TRUE );
+		return $this->exactly( TRUE );
 	}
 
 
 	function ok()
 	{
-		$this->equal( TRUE );
+		return $this->equal( TRUE );
 	}
 
 
 	function false()
 	{
-		$this->exactly( FALSE );
+		return $this->exactly( FALSE );
 	}
 
 
@@ -814,7 +814,7 @@ class Sugar_unit_test
 
 	function fail()
 	{
-		$this->thrown();
+		return $this->thrown();
 	}
 
 
@@ -980,6 +980,14 @@ class Sugar_unit_test
 	{
 		$this->mode = '';
 		$this->negation = FALSE;
+
+		return $this;
+	}
+
+
+	function save( &$value )
+	{
+		$value = $this->value;
 
 		return $this;
 	}
